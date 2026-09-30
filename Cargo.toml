@@ -1,0 +1,108 @@
+[package]
+name = "lumina"
+version = "0.1.0"
+edition = "2024"
+description = "Typed-decision System 1 engine: a Rust port of laya (Jev) on candle"
+license = "Apache-2.0"
+rust-version = "1.85"
+keywords = ["ml", "transformers", "decision-engine", "candle"]
+categories = ["science"]
+default-run = "lumina"
+
+[[bin]]
+name = "lumina"
+path = "bin/lumina.rs"
+
+[[bin]]
+name = "lumina-serve"
+path = "bin/lumina-serve.rs"
+
+[dependencies]
+candle-core = "0.11"
+candle-nn = "0.11"
+hf-hub = { version = "1.0", features = ["blocking"] }
+tokenizers = { version = "0.23", default-features = false, features = ["fancy-regex"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+thiserror = "2"
+tracing = "0.1"
+
+# CLI binary
+clap = { version = "4", features = ["derive"] }
+
+# HTTP server binary
+axum = "0.8"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[features]
+default = []
+cuda = ["candle-core/cuda", "candle-nn/cuda"]
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+unreachable_pub = "warn"
+unused_must_use = "deny"
+elided_lifetimes_in_paths = "warn"
+unused_lifetimes = "warn"
+single_use_lifetimes = "warn"
+
+[lints.clippy]
+# Groups: group levels are weak, specific lints below win (priority = -1).
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+# Hard denies — sharp tools.
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+indexing_slicing = "deny"
+mem_forget = "deny"
+as_underscore = "deny"
+dbg_macro = "deny"
+exit = "deny"
+mod_module_files = "warn"
+empty_drop = "warn"
+empty_structs_with_brackets = "warn"
+# No external consumers until the crate is published — the lib serves this
+# workspace's own binaries, so #[non_exhaustive] is friction without benefit.
+exhaustive_enums = "allow"
+exhaustive_structs = "allow"
+
+# The numerics deliberately mirror Python (PyTorch / NumPy f32) semantics;
+# casts between f32/f64/usize are intentional and reviewed at each site.
+cast_possible_truncation = "allow"
+cast_possible_wrap = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+float_cmp = "allow"
+
+# Stylistic relaxations.
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+doc_markdown = "allow"
+# VarBuilder moves follow the candle ecosystem idiom (Arc-backed, cheap to move,
+# and `.get()`/`.pp()` take &self). Transitive version skew is uncontrollable, and
+# repository/readme metadata is meaningless until the crate is published.
+needless_pass_by_value = "allow"
+multiple_crate_versions = "allow"
+cargo_common_metadata = "allow"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+debug = "line-tables-only"
+
+[profile.dev]
+opt-level = 1
+debug = true
